@@ -24,3 +24,19 @@ class PdfPageLimitExceededError(ApplicationError):
 
 class PdfTextNotFoundError(ApplicationError):
     pass
+
+
+class LLMUnavailableError(ApplicationError):
+    pass
+
+
+class LLMTimeoutError(ApplicationError):
+    pass
+
+
+class LLMConfigurationError(ApplicationError):
+    pass
+
+
+class InvalidLLMResponseError(ApplicationError):
+    pass

@@ -16,8 +16,11 @@ def test_create_app_returns_fastapi_application() -> None:
     assert application.title == "Tender Summarizer"
 
 
-def test_importing_app_does_not_require_ollama() -> None:
+def test_importing_app_does_not_require_ollama(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     sys.modules.pop("app.main", None)
+    monkeypatch.delitem(sys.modules, "ollama", raising=False)
 
     module = importlib.import_module("app.main")
 
