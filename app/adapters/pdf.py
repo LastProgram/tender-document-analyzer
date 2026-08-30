@@ -1,4 +1,5 @@
 from io import BytesIO
+from time import perf_counter
 
 from pypdf import PdfReader
 from pypdf.errors import FileNotDecryptedError, PyPdfError
@@ -8,6 +9,7 @@ from app.core.exceptions import (
     InvalidPdfError,
     PdfPageLimitExceededError,
 )
+from app.core.logging import elapsed_ms, log_event
 from app.schemas.document import DocumentPage
 
 
@@ -16,6 +18,7 @@ class PDFExtractor:
         self._max_pdf_pages = max_pdf_pages
 
     def extract(self, content: bytes) -> list[DocumentPage]:
+        started_at = perf_counter()
         try:
             reader = PdfReader(BytesIO(content))
         except FileNotDecryptedError as exc:
@@ -44,4 +47,10 @@ class PDFExtractor:
         except PyPdfError as exc:
             raise InvalidPdfError("PDF document is invalid.") from exc
 
+        log_event(
+            "pdf_extraction_completed",
+            duration_ms=elapsed_ms(started_at),
+            page_count=len(pages),
+            character_count=sum(len(page.text) for page in pages),
+        )
         return pages

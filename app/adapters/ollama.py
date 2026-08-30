@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from http import HTTPStatus
+from time import perf_counter
 from typing import Any, Protocol
 
 from httpx import TimeoutException
@@ -13,6 +14,7 @@ from app.core.exceptions import (
     LLMTimeoutError,
     LLMUnavailableError,
 )
+from app.core.logging import elapsed_ms, log_event
 from app.prompts import consolidation_messages, extraction_messages
 from app.schemas.document import DocumentChunk
 from app.schemas.tender import TenderSummary
@@ -52,13 +54,27 @@ class OllamaTenderExtractor:
         )
 
     async def extract(self, chunk: DocumentChunk) -> TenderSummary:
-        return await self._request(extraction_messages(chunk))
+        started_at = perf_counter()
+        summary = await self._request(extraction_messages(chunk))
+        log_event(
+            "llm_extraction_completed",
+            duration_ms=elapsed_ms(started_at),
+            model=self._model,
+        )
+        return summary
 
     async def consolidate(
         self,
         summaries: Sequence[TenderSummary],
     ) -> TenderSummary:
-        return await self._request(consolidation_messages(summaries))
+        started_at = perf_counter()
+        summary = await self._request(consolidation_messages(summaries))
+        log_event(
+            "llm_consolidation_completed",
+            duration_ms=elapsed_ms(started_at),
+            model=self._model,
+        )
+        return summary
 
     async def _request(self, messages: list[dict[str, str]]) -> TenderSummary:
         try:

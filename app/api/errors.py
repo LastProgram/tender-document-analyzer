@@ -1,3 +1,4 @@
+import logging
 from http import HTTPStatus
 
 from fastapi import FastAPI, Request
@@ -16,6 +17,7 @@ from app.core.exceptions import (
     PdfTooLargeError,
     UnsupportedPdfTypeError,
 )
+from app.core.logging import REQUEST_ID_HEADER, elapsed_ms, log_event
 
 ErrorDetails = tuple[HTTPStatus, str, str]
 
@@ -79,26 +81,48 @@ _INTERNAL_ERROR: ErrorDetails = (
 )
 
 
-def _error_response(details: ErrorDetails) -> JSONResponse:
+def _error_response(details: ErrorDetails, request_id: str) -> JSONResponse:
     status_code, code, message = details
     return JSONResponse(
         status_code=status_code,
         content={"detail": {"code": code, "message": message}},
+        headers={REQUEST_ID_HEADER: request_id},
     )
 
 
 async def _application_error_handler(
-    _request: Request,
+    request: Request,
     exc: ApplicationError,
 ) -> JSONResponse:
-    return _error_response(ERROR_RESPONSES.get(type(exc), _INTERNAL_ERROR))
+    details = ERROR_RESPONSES.get(type(exc), _INTERNAL_ERROR)
+    status_code, code, _message = details
+    request_id = request.state.request_id
+    log_event(
+        "tender_processing_failed",
+        request_id=request_id,
+        duration_ms=elapsed_ms(request.state.request_started_at),
+        error_code=code,
+        http_status=status_code,
+    )
+    return _error_response(details, request_id)
 
 
 async def _unexpected_error_handler(
-    _request: Request,
+    request: Request,
     _exc: Exception,
 ) -> JSONResponse:
-    return _error_response(_INTERNAL_ERROR)
+    status_code, code, _message = _INTERNAL_ERROR
+    request_id = request.state.request_id
+    log_event(
+        "tender_processing_failed",
+        level=logging.ERROR,
+        request_id=request_id,
+        include_exception=True,
+        duration_ms=elapsed_ms(request.state.request_started_at),
+        error_code=code,
+        http_status=status_code,
+    )
+    return _error_response(_INTERNAL_ERROR, request_id)
 
 
 def register_error_handlers(application: FastAPI) -> None:
