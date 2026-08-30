@@ -14,3 +14,13 @@ class DocumentPage(BaseModel):
 
     number: int
     text: str
+
+
+class DocumentChunk(BaseModel):
+    """Представляет текстовый блок с диапазоном исходных страниц."""
+
+    model_config = ConfigDict(frozen=True)
+
+    page_from: int
+    page_to: int
+    text: str
