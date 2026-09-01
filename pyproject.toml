@@ -23,6 +23,9 @@ dev = [
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+markers = [
+    "ollama: tests requiring a running local Ollama instance",
+]
 
 [tool.ruff]
 target-version = "py312"
