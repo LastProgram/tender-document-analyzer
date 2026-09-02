@@ -174,6 +174,20 @@ async def test_extract_prompt_defines_tender_field_semantics() -> None:
     ("error", "expected_error"),
     [
         (httpx.ReadTimeout("timed out"), LLMTimeoutError),
+        (
+            httpx.ReadError(
+                "connection reset",
+                request=httpx.Request("POST", "http://ollama.test/api/chat"),
+            ),
+            LLMUnavailableError,
+        ),
+        (
+            httpx.RemoteProtocolError(
+                "malformed HTTP response",
+                request=httpx.Request("POST", "http://ollama.test/api/chat"),
+            ),
+            LLMUnavailableError,
+        ),
         (ConnectionError("unavailable"), LLMUnavailableError),
         (ResponseError("invalid request", 400), LLMConfigurationError),
         (ResponseError("model not found", 404), LLMConfigurationError),

@@ -3,7 +3,7 @@ from http import HTTPStatus
 from time import perf_counter
 from typing import Any, Protocol
 
-from httpx import TimeoutException
+from httpx import RequestError, TimeoutException
 from ollama import AsyncClient, ChatResponse, ResponseError
 from pydantic import ValidationError
 
@@ -88,6 +88,8 @@ class OllamaTenderExtractor:
             )
         except TimeoutException as exc:
             raise LLMTimeoutError from exc
+        except RequestError as exc:
+            raise LLMUnavailableError from exc
         except ConnectionError as exc:
             raise LLMUnavailableError from exc
         except ResponseError as exc:
