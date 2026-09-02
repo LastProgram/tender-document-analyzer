@@ -1,0 +1,35 @@
+[project]
+name = "tender-summarizer"
+version = "0.1.0"
+description = "FastAPI service for summarizing tender documents"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.116.0,<1.0.0",
+    "ollama>=0.6.0,<1.0.0",
+    "pydantic>=2.11.0,<3.0.0",
+    "pydantic-settings>=2.10.0,<3.0.0",
+    "pypdf>=6.16.1,<7.0.0",
+    "python-multipart>=0.0.20,<1.0.0",
+    "uvicorn>=0.35.0,<1.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.0,<1.0.0",
+    "pytest>=8.4.0,<9.0.0",
+    "pytest-asyncio>=1.1.0,<2.0.0",
+    "ruff>=0.12.0,<1.0.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = [
+    "ollama: tests requiring a running local Ollama instance",
+]
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "UP"]
