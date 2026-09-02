@@ -59,7 +59,7 @@ def create_test_app(
     service: FakeSummaryService,
     settings: Settings | None = None,
 ) -> FastAPI:
-    application = create_app()
+    application = create_app(settings)
     application.dependency_overrides[get_summary_service] = lambda: service
     if settings is not None:
         application.dependency_overrides[get_settings] = lambda: settings
@@ -149,6 +149,27 @@ async def test_actual_upload_size_over_limit_returns_413() -> None:
 
     assert response.status_code == 413
     assert response.json()["detail"]["code"] == "PDF_TOO_LARGE"
+    assert service.documents == []
+
+
+@pytest.mark.asyncio
+async def test_request_body_limit_runs_before_multipart_parsing() -> None:
+    service = FakeSummaryService(result=make_summary())
+    settings = Settings(_env_file=None, max_upload_size_mb=1)
+
+    async with request_client(service, settings) as client:
+        response = await client.post(
+            SUMMARIZE_URL,
+            headers={
+                "Content-Type": "multipart/form-data; boundary=invalid",
+                "X-Request-ID": "oversized-request",
+            },
+            content=b"x" * (1024 * 1024 + 1),
+        )
+
+    assert response.status_code == 413
+    assert response.json()["detail"]["code"] == "PDF_TOO_LARGE"
+    assert response.headers["X-Request-ID"] == "oversized-request"
     assert service.documents == []
 
 

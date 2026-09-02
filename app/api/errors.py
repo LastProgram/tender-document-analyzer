@@ -90,6 +90,13 @@ def _error_response(details: ErrorDetails, request_id: str) -> JSONResponse:
     )
 
 
+def application_error_response(
+    error_type: type[ApplicationError],
+    request_id: str,
+) -> JSONResponse:
+    return _error_response(ERROR_RESPONSES.get(error_type, _INTERNAL_ERROR), request_id)
+
+
 async def _application_error_handler(
     request: Request,
     exc: ApplicationError,
@@ -104,7 +111,7 @@ async def _application_error_handler(
         error_code=code,
         http_status=status_code,
     )
-    return _error_response(details, request_id)
+    return application_error_response(type(exc), request_id)
 
 
 async def _unexpected_error_handler(
